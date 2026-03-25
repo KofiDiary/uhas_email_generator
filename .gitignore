@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+dist/
+build/
+*.spec
+data/uhas.db
+.DS_Store
