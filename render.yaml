@@ -1,0 +1,16 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# NOTE: This is a Python desktop GUI application (CustomTkinter / Tkinter).
+# Running it on Render requires a virtual display. See the README for details.
+
+services:
+  - type: worker
+    name: uhas-email-generator
+    runtime: python
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      # No secrets are required to run the app; it uses a local SQLite database.
+      # Add any future environment variables here, e.g.:
+      # - key: SOME_VAR
+      #   value: some_value
