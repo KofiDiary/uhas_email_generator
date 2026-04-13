@@ -19,6 +19,7 @@ Desktop application for generating standardized UHAS student emails from Excel/C
 - [Output Format](#output-format)
 - [Troubleshooting](#troubleshooting)
 - [Build Executable (Optional)](#build-executable-optional)
+- [Render Deployment](#render-deployment)
 - [License](#license)
 
 ---
@@ -240,5 +241,71 @@ Typical command:
 ```powershell
 pyinstaller uhas_email_gen.spec
 ```
+
+---
+
+## Render Deployment
+
+> **Important:** This is a desktop GUI application (CustomTkinter / Tkinter). Running it in a headless cloud environment like Render requires a virtual display (Xvfb). The deployment files below set up the service; see the **Virtual display on Render** section below for setup details.
+
+### Files added for Render
+
+| File | Purpose |
+|---|---|
+| `render.yaml` | Render Blueprint — defines service type, build & start commands |
+| `Procfile` | Fallback process declaration (`worker: python main.py`) |
+| `.python-version` | Pins Python 3.11 for consistent builds |
+
+### Deploying with the Render Blueprint
+
+1. Push this repository to GitHub (or GitLab).
+2. In the [Render Dashboard](https://dashboard.render.com/), click **New → Blueprint**.
+3. Connect your repository — Render will auto-detect `render.yaml`.
+4. Review the service settings and click **Apply**.
+
+Render will run:
+```
+pip install -r requirements.txt   # build step
+python main.py                    # start step
+```
+
+### Required environment variables
+
+This application stores data in a local SQLite file (`data/uhas.db`) and does **not** require any external secrets or API keys at startup.
+
+If you add SMTP or other integrations in the future, declare their environment variables in `render.yaml` under `envVars` (without values) so Render prompts for them during deploy:
+
+```yaml
+envVars:
+  - key: SMTP_HOST
+    sync: false
+  - key: SMTP_PASSWORD
+    sync: false
+```
+
+### Virtual display on Render
+
+Because this app opens a Tkinter window, you need a virtual display in the Render environment. Add the following build step or wrap the start command:
+
+```bash
+# Install Xvfb (add to buildCommand in render.yaml)
+apt-get update && apt-get install -y xvfb
+
+# Use as start command
+startCommand: xvfb-run --auto-servernum python main.py
+```
+
+Update `render.yaml` accordingly:
+
+```yaml
+buildCommand: apt-get update && apt-get install -y xvfb && pip install --upgrade pip && pip install -r requirements.txt
+startCommand: xvfb-run --auto-servernum python main.py
+```
+
+### Troubleshooting Render deployments
+
+- **`cannot open display`** — Xvfb is not running; see virtual display section above.
+- **`ModuleNotFoundError`** — ensure `requirements.txt` is UTF-8 (already fixed in this repo).
+- **Worker exits immediately** — check service logs in the Render dashboard; the GUI may have crashed without a display.
 
 ---
